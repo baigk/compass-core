@@ -2,6 +2,7 @@
 #set computes = $getVar('compute', [])
 #set has = $getVar('ha', [])
 #set odls = $getVar('odl', [])
+#set onoss = $getVar('onos', [])
 #if not $isinstance($controllers, list)
     #set controllers = [$controllers]
 #end if
@@ -13,6 +14,9 @@
 #end if
 #if not $isinstance(odls, list)
     #set odls = [odls]
+#end if
+#if not $isinstance(onoss, list)
+    #set onoss = [onoss]
 #end if
 #set credentials = $getVar('server_credentials', {})
 #set username = $credentials.get('username', 'root')
@@ -40,4 +44,10 @@ $ha_hostname ansible_ssh_host=$ha_ip ansible_ssh_user=$username ansible_ssh_pass
     #set odl_ip = $odl.management.ip
     #set odl_hostname = $odl.hostname
 $odl_hostname ansible_ssh_host=$odl_ip ansible_ssh_user=$username ansible_ssh_password=$password
+#end for
+[onos]
+#for onos in $onoss
+    #set onos_ip = $onos.management.ip
+    #set onos_hostname = $onos.hostname
+$onos_hostname ansible_ssh_host=$onos_ip ansible_ssh_user=$username ansible_ssh_password=$password
 #end for
