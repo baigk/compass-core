@@ -244,11 +244,16 @@ class AnsibleInstaller(PKInstaller):
         dirs = self.runner_dirs
         files = self.runner_files
         for dir in dirs:
+            items = dir.split(':')
+            src, dst = items[0], items[-1]
+            if not os.path.exists(os.path.join(self.ansible_dir, src)):
+               continue
+
             shutil.copytree(
-                os.path.join(self.ansible_dir, dir),
+                os.path.join(self.ansible_dir, src),
                 os.path.join(
                     ansible_run_destination,
-                    dir
+                    dst
                 )
             )
         for file in files:
