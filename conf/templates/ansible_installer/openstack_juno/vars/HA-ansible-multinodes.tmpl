@@ -1,6 +1,10 @@
 #set cluster_name = $getVar('name', '')
 #set controllers = $getVar('controller', [])
 #set computers = $getVar('compute', [])
+#set network_cfg = $getVar('network_cfg', {})
+#set ip_settings= $getVar('ip_settings', {})
+#set neutron_cfg = $getVar('neutron_config', {})
+
 #set has = $getVar('ha', [])
 #set ha_vip = $getVar('ha_vip', [])
 #if not $isinstance($controllers, list)
@@ -14,18 +18,27 @@
 #end if
 
 #for network in $controllers
-    #set network_external_nic = $network.external.interface
-    #set network_internal_nic = $network.management.interface
-INTERFACE_NAME: $network_external_nic    
+    #set network_internal_nic = $network.install.interface
 INTERNAL_INTERFACE: $network_internal_nic
 #end for
 
+ip_settings: $ip_settings
+host_ip_settings: "{{ ip_settings[inventory_hostname] }}"
 db_host: $ha_vip
-rabbit_host: $ha_vip 
+rabbit_host: $ha_vip
 
+network_cfg: $network_cfg
 internal_interface: "ansible_{{ INTERNAL_INTERFACE }}"
-internal_ip: "{{ hostvars[inventory_hostname][internal_interface]['ipv4']['address'] }}"
+internal_ips:
+#for $host, $ip_setting in $ip_settings.items()
+#for $ip_info in $ip_setting
+#if $ip_info.name == "mgmt"
+  $host: $ip_info.ip
+#end if
+#end for
+#end for
 
+internal_ip: "{{ internal_ips[inventory_hostname] }}"
 identity_host: "{{ internal_ip }}"
 controllers_host: "{{ internal_ip }}"
 storage_controller_host: "{{ internal_ip }}"
@@ -34,16 +47,33 @@ image_host: "{{ internal_ip }}"
 network_server_host: "{{ internal_ip }}"
 dashboard_host: "{{ internal_ip }}"
 
+haproxy_hosts:
+#for $item in $has
+  $item["hostname"]:
+#for $ip_info in $ip_settings[$item["hostname"]]
+#if $ip_info["name"] == "mgmt"
+    $ip_info["ip"]
+#end if
+#end for
+#end for
+
 HA_CLUSTER:
-#set prev = {"hostname": "", "management":{"ip": "''"}}
-#for ha in has
-   $ha.hostname: $prev.management.ip
-   #set prev = $ha
-   #set vip_netmask = $ha.management.netmask
+#set first_node=1
+#for $item in $has
+  $item["hostname"]:
+#for $ip_info in $ip_settings[$item["hostname"]]
+#if $ip_info["name"] == "mgmt"
+#if $first_node == 0
+    $ip_info["ip"]
+#else
+    ''
+#end if
+#end if
+#end for
+#set $first_node=0
 #end for
 
 HA_VIP: $ha_vip
-HA_NETMASK: $vip_netmask
 ERLANG_TOKEN: YOWSJSJIGGAUFZTIBRAD
 #set credentials = $getVar('service_credentials', {})
 #set console_credentials = $getVar('console_credentials', {})
@@ -92,21 +122,30 @@ CINDER_DBPASS: $cinder_dbpass
 CINDER_PASS: $cinder_pass
 NEUTRON_DBPASS: $neutron_pass
 NEUTRON_PASS: $neutron_pass
-NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan']
-NEUTRON_TENANT_NETWORK_TYPES: ['vxlan']
+NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
+NEUTRON_TENANT_NETWORK_TYPES: ['vlan']
 #NEUTRON_MECHANISM_DRIVERS: ['opendaylight']
 NEUTRON_MECHANISM_DRIVERS: ['openvswitch']
-NEUTRON_TUNNEL_TYPES: ['vxlan']
+NEUTRON_TUNNEL_TYPES: []
 METADATA_SECRET: metadata_secret
 WSREP_SST_USER: wsrep_sst
 WSREP_SST_PASS: wsrep_sst_sercet
 
 INSTANCE_TUNNELS_INTERFACE_IP_ADDRESS: 10.1.1.21
 
-EXTERNAL_NETWORK_CIDR: 203.0.113.0/24
-EXTERNAL_NETWORK_GATEWAY: 203.0.113.1
-FLOATING_IP_START: 203.0.113.101
-FLOATING_IP_END: 203.0.113.200
+#set stop=0
+#for $host, $ip_setting in $ip_settings.items()
+#for $ip_info in $ip_setting
+#if $ip_info.name == "external" and $stop == 0
+EXTERNAL_NETWORK_CIDR: $ip_info.cidr
+EXTERNAL_NETWORK_GATEWAY: $ip_info.gw
+FLOATING_IP_START: $ip_info.floating_ip_ranges[0]
+FLOATING_IP_END: $ip_info.floating_ip_ranges[1]
+#set stop=1
+#end if
+#end for
+#end for
+
 
 #build_in_image: http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img
 build_in_image: http://192.168.121.12:9999/img/cirros-0.3.3-x86_64-disk.img
