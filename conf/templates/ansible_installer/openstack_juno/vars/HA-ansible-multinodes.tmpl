@@ -57,22 +57,6 @@ haproxy_hosts:
 #end for
 #end for
 
-HA_CLUSTER:
-#set first_node=1
-#for $item in $has
-  $item["hostname"]:
-#for $ip_info in $ip_settings[$item["hostname"]]
-#if $ip_info["name"] == "mgmt"
-#if $first_node == 0
-    $ip_info["ip"]
-#else
-    ''
-#end if
-#end if
-#end for
-#set $first_node=0
-#end for
-
 HA_VIP: $ha_vip
 ERLANG_TOKEN: YOWSJSJIGGAUFZTIBRAD
 #set credentials = $getVar('service_credentials', {})
