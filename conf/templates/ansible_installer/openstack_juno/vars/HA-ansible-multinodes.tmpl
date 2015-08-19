@@ -4,6 +4,7 @@
 #set network_cfg = $getVar('network_cfg', {})
 #set ip_settings= $getVar('ip_settings', {})
 #set neutron_cfg = $getVar('neutron_config', {})
+#set ovs_config = $neutron_cfg.openvswitch
 
 #set has = $getVar('ha', [])
 #set ha_vip = $getVar('ha_vip', [])
@@ -107,7 +108,20 @@ CINDER_PASS: $cinder_pass
 NEUTRON_DBPASS: $neutron_pass
 NEUTRON_PASS: $neutron_pass
 NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
-NEUTRON_TENANT_NETWORK_TYPES: ['vlan']
+
+NEUTRON_TENANT_NETWORK_TYPES: ['$ovs_config["tenant_network_type"]']
+NEUTRON_OVS_BRIDGE_MAPPINGS: $ovs_config['bridge_mappings']
+#if 'vlan_ranges' in $ovs_config
+NEUTRON_VLAN_RANGES: $ovs_config['vlan_ranges']
+#else
+NEUTRON_VLAN_RANGES: []
+#end if
+#if 'tunnel_id_ranges' in $ovs_config
+NEUTRON_TUNNEL_ID_RANGES: $ovs_config['tunnel_id_ranges']
+#else
+NEUTRON_TUNNEL_ID_RANGES: []
+#end if
+
 #NEUTRON_MECHANISM_DRIVERS: ['opendaylight']
 NEUTRON_MECHANISM_DRIVERS: ['openvswitch']
 NEUTRON_TUNNEL_TYPES: []
