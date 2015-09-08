@@ -23,6 +23,7 @@
 INTERNAL_INTERFACE: $network_internal_nic
 #end for
 
+public_net_info: $network_cfg.public_net_info
 ip_settings: $ip_settings
 host_ip_settings: "{{ ip_settings[inventory_hostname] }}"
 db_host: $ha_vip
@@ -124,26 +125,12 @@ NEUTRON_TUNNEL_ID_RANGES: []
 
 #NEUTRON_MECHANISM_DRIVERS: ['opendaylight']
 NEUTRON_MECHANISM_DRIVERS: ['openvswitch']
-NEUTRON_TUNNEL_TYPES: []
+NEUTRON_TUNNEL_TYPES: ['vxlan']
 METADATA_SECRET: metadata_secret
 WSREP_SST_USER: wsrep_sst
 WSREP_SST_PASS: wsrep_sst_sercet
 
 INSTANCE_TUNNELS_INTERFACE_IP_ADDRESS: 10.1.1.21
-
-#set stop=0
-#for $host, $ip_setting in $ip_settings.items()
-#for $ip_info in $ip_setting
-#if $ip_info.name == "external" and $stop == 0
-EXTERNAL_NETWORK_CIDR: $ip_info.cidr
-EXTERNAL_NETWORK_GATEWAY: $ip_info.gw
-FLOATING_IP_START: $ip_info.floating_ip_ranges[0]
-FLOATING_IP_END: $ip_info.floating_ip_ranges[1]
-#set stop=1
-#end if
-#end for
-#end for
-
 
 #build_in_image: http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img
 build_in_image: http://192.168.121.12:9999/img/cirros-0.3.3-x86_64-disk.img
