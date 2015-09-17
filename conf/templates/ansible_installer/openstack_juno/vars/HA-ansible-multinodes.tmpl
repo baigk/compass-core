@@ -1,46 +1,65 @@
+#from random import randint
 #set cluster_name = $getVar('name', '')
-#set controllers = $getVar('controller', [])
-#set computers = $getVar('compute', [])
 #set network_cfg = $getVar('network_cfg', {})
-#set ip_settings= $getVar('ip_settings', {})
+
+#set $sys_intf_mappings= {}
+#for $intf_info in $network_cfg.sys_intf_mappings
+#set $sys_intf_mappings[$intf_info["name"]] = $intf_info
+#end for  
+
+#set ip_settings={}
+#for k,v in $getVar('ip_settings', {}).items() 
+#set host_ip_settings={}
+#for intf in v
+#set $host_ip_settings[$intf["alias"]]=intf
+#end for
+#set $ip_settings[$k]=$host_ip_settings
+#end for
+ 
 #set neutron_cfg = $getVar('neutron_config', {})
 #set ovs_config = $neutron_cfg.openvswitch
 
 #set has = $getVar('ha', [])
 #set ha_vip = $getVar('ha_vip', [])
-#if not $isinstance($controllers, list)
-    #set controllers = [$controllers]
-#end if
-#if not $isinstance($computers, list)
-    #set computers = [$computers]
-#end if
-#if not $isinstance($has, list)
-    #set has = [$has]
-#end if
 
-#for network in $controllers
-    #set network_internal_nic = $network.install.interface
-INTERNAL_INTERFACE: $network_internal_nic
-#end for
+#set controllers = $getVar('controller', [])
+#set computers = $getVar('compute', [])
 
-public_net_info: $network_cfg.public_net_info
 ip_settings: $ip_settings
-host_ip_settings: "{{ ip_settings[inventory_hostname] }}"
-db_host: $ha_vip
-rabbit_host: $ha_vip
-
 network_cfg: $network_cfg
-internal_interface: "ansible_{{ INTERNAL_INTERFACE }}"
-internal_ips:
-#for $host, $ip_setting in $ip_settings.items()
-#for $ip_info in $ip_setting
-#if $ip_info.name == "mgmt"
-  $host: $ip_info.ip
-#end if
-#end for
-#end for
+sys_intf_mappings: $sys_intf_mappings
 
-internal_ip: "{{ internal_ips[inventory_hostname] }}"
+public_net_info: "{{ network_cfg.public_net_info }}"
+host_ip_settings: "{{ ip_settings[inventory_hostname] }}"
+
+internal_vip:
+  ip: $network_cfg["internal_vip"]["ip"]
+  netmask: $network_cfg["internal_vip"]["netmask"]
+#if "vlan_tag" in $sys_intf_mappings[$network_cfg["internal_vip"]["interface"]]
+  interface: $sys_intf_mappings[$network_cfg["internal_vip"]["interface"]]["name"]
+#else
+  interface: $sys_intf_mappings[$network_cfg["internal_vip"]["interface"]]["interface"]
+#end if
+
+public_vip:
+  ip: $network_cfg["public_vip"]["ip"]
+  netmask: $network_cfg["public_vip"]["netmask"]
+#if "vlan_tag" in $sys_intf_mappings[$network_cfg["public_vip"]["interface"]]
+  interface: $sys_intf_mappings[$network_cfg["public_vip"]["interface"]]["name"]
+#else
+  interface: $sys_intf_mappings[$network_cfg["public_vip"]["interface"]]["interface"]
+#end if
+
+db_host: "{{ internal_vip.ip }}"
+rabbit_host: "{{ internal_vip.ip }}"
+
+internal_ip: "{{ ip_settings[inventory_hostname]['mgmt']['ip'] }}"
+internal_nic: mgmt
+
+#set random_id = randint(1, 255)
+vrouter_id_internal: $random_id
+vrouter_id_public: $random_id
+
 identity_host: "{{ internal_ip }}"
 controllers_host: "{{ internal_ip }}"
 storage_controller_host: "{{ internal_ip }}"
@@ -51,15 +70,10 @@ dashboard_host: "{{ internal_ip }}"
 
 haproxy_hosts:
 #for $item in $has
-  $item["hostname"]:
-#for $ip_info in $ip_settings[$item["hostname"]]
-#if $ip_info["name"] == "mgmt"
-    $ip_info["ip"]
-#end if
-#end for
+#set $hostname=$item["hostname"]
+  $hostname: $ip_settings[$hostname]["mgmt"]["ip"]
 #end for
 
-HA_VIP: $ha_vip
 ERLANG_TOKEN: YOWSJSJIGGAUFZTIBRAD
 #set credentials = $getVar('service_credentials', {})
 #set console_credentials = $getVar('console_credentials', {})
@@ -108,8 +122,8 @@ CINDER_DBPASS: $cinder_dbpass
 CINDER_PASS: $cinder_pass
 NEUTRON_DBPASS: $neutron_pass
 NEUTRON_PASS: $neutron_pass
-NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
 
+NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
 NEUTRON_TENANT_NETWORK_TYPES: ['$ovs_config["tenant_network_type"]']
 NEUTRON_OVS_BRIDGE_MAPPINGS: $ovs_config['bridge_mappings']
 #if 'vlan_ranges' in $ovs_config
@@ -130,7 +144,7 @@ METADATA_SECRET: metadata_secret
 WSREP_SST_USER: wsrep_sst
 WSREP_SST_PASS: wsrep_sst_sercet
 
-INSTANCE_TUNNELS_INTERFACE_IP_ADDRESS: 10.1.1.21
+INSTANCE_TUNNELS_INTERFACE_IP_ADDRESS: "{{ internal_ip }}"
 
 #build_in_image: http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img
 build_in_image: http://192.168.121.12:9999/img/cirros-0.3.3-x86_64-disk.img
@@ -149,4 +163,3 @@ odl_base_features: ['config', 'standard', 'region', 'package', 'kar', 'ssh', 'ma
 odl_extra_features: ['odl-l2switch-switch', 'odl-ovsdb-plugin', 'odl-ovsdb-openstack', 'odl-ovsdb-northbound','odl-dlux-core', 'odl-restconf-all', 'odl-mdsal-clustering', 'odl-openflowplugin-flow-services', 'odl-netconf-connector', 'odl-netconf-connector-ssh', 'jolokia-osgi']
 odl_features: "{{ odl_base_features + odl_extra_features }}"
 odl_api_port: 8080
-
