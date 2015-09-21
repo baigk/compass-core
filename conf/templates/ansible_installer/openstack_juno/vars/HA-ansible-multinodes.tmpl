@@ -1,6 +1,7 @@
 #from random import randint
 #set cluster_name = $getVar('name', '')
 #set network_cfg = $getVar('network_cfg', {})
+#set ntp_server = $getVar('ntp_server', "")
 
 #set $sys_intf_mappings= {}
 #for $intf_info in $network_cfg.sys_intf_mappings
@@ -32,6 +33,7 @@ sys_intf_mappings: $sys_intf_mappings
 public_net_info: "{{ network_cfg.public_net_info }}"
 host_ip_settings: "{{ ip_settings[inventory_hostname] }}"
 
+ntp_server: $ntp_server
 internal_vip:
   ip: $network_cfg["internal_vip"]["ip"]
   netmask: $network_cfg["internal_vip"]["netmask"]
