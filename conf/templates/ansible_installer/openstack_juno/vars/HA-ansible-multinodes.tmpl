@@ -2,7 +2,7 @@
 #set cluster_name = $getVar('name', '')
 #set network_cfg = $getVar('network_cfg', {})
 #set ntp_server = $getVar('ntp_server', "")
-
+#set ceph_disk = $getVar('ceph_disk',"")
 #set $sys_intf_mappings= {}
 #for $intf_info in $network_cfg.sys_intf_mappings
 #set $sys_intf_mappings[$intf_info["name"]] = $intf_info
