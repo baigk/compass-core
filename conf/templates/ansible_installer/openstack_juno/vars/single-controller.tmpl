@@ -45,7 +45,7 @@ INTERNAL_INTERFACE: $network_internal_nic
 #set neutron_pass = $console_credentials.network.password
 
 cluster_name: $cluster_name
-
+deploy_type: $getVar('deploy_type', 'virtual')
 compute_controller_host: "{{ controller_host }}"
 db_host: "{{ controller_host }}"
 rabbit_host: "{{ controller_host }}"
