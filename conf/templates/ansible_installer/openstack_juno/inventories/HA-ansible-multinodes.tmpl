@@ -3,6 +3,7 @@
 #set has = $getVar('ha', [])
 #set odls = $getVar('odl', [])
 #set onoss = $getVar('onos', [])
+#set cephs = $getVar('ceph', [])
 #if not $isinstance($controllers, list)
     #set controllers = [$controllers]
 #end if
@@ -17,6 +18,9 @@
 #end if
 #if not $isinstance(onoss, list)
     #set onoss = [onoss]
+#end if
+#if not $isinstance(cephs, list)
+    #set cephs = [cephs]
 #end if
 #set credentials = $getVar('server_credentials', {})
 #set username = $credentials.get('username', 'root')
@@ -50,4 +54,10 @@ $odl_hostname ansible_ssh_host=$odl_ip ansible_ssh_user=$username ansible_ssh_pa
     #set onos_ip = $onos.install.ip
     #set onos_hostname = $onos.hostname
 $onos_hostname ansible_ssh_host=$onos_ip ansible_ssh_user=$username ansible_ssh_password=$password
+#end for
+[ceph]
+#for ceph in $cephs
+    #set ceph_ip = $ceph.install.ip
+    #set ceph_hostname = $ceph.hostname
+$ceph_hostname ansible_ssh_host=$ceph_ip ansible_ssh_user=$username ansible_ssh_password=$password
 #end for
