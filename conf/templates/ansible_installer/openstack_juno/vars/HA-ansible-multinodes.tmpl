@@ -131,6 +131,17 @@ CINDER_PASS: $cinder_pass
 NEUTRON_DBPASS: $neutron_pass
 NEUTRON_PASS: $neutron_pass
 
+#set neutron_service_plugins=['router']
+
+#if $getVar('enable_fwaas', True)
+#neutron_service_plugins.append('firewall')
+#end if
+
+#if $getVar('enable_vpnaas', True)
+#neutron_service_plugins.append('vpnaas')
+#end if
+
+NEUTRON_SERVICE_PLUGINS: $neutron_service_plugins
 NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
 NEUTRON_TENANT_NETWORK_TYPES: ['$ovs_config["tenant_network_type"]']
 NEUTRON_OVS_BRIDGE_MAPPINGS: $ovs_config['bridge_mappings']
