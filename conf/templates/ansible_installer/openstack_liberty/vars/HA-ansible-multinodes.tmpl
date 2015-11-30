@@ -78,6 +78,11 @@ haproxy_hosts:
 #for $item in $has
 #set $hostname=$item["hostname"]
   $hostname: $ip_settings[$hostname]["mgmt"]["ip"]
+  #end for
+
+host_index:
+#for $index, $item in enumerate($has)
+  $item["hostname"]: $index
 #end for
 
 ERLANG_TOKEN: YOWSJSJIGGAUFZTIBRAD
@@ -108,8 +113,8 @@ NTP_SERVER_LOCAL: "{{ controllers_host }}"
 DB_HOST: "{{ db_host }}"
 MQ_BROKER: rabbitmq
 
-OPENSTACK_REPO: cloudarchive-liberty.list
-liberty_cloud_archive: deb http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/liberty main
+OPENSTACK_REPO: cloudarchive-juno.list
+juno_cloud_archive: deb http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/juno main
 ADMIN_TOKEN: admin
 CEILOMETER_TOKEN: c095d479023a0fd58a54
 erlang.cookie: DJJVECFMCJPVYQTJTDWG
@@ -131,6 +136,17 @@ CINDER_PASS: $cinder_pass
 NEUTRON_DBPASS: $neutron_pass
 NEUTRON_PASS: $neutron_pass
 
+#set neutron_service_plugins=['router']
+
+#if $getVar('enable_fwaas', True)
+#neutron_service_plugins.append('firewall')
+#end if
+
+#if $getVar('enable_vpnaas', True)
+#neutron_service_plugins.append('vpnaas')
+#end if
+
+NEUTRON_SERVICE_PLUGINS: $neutron_service_plugins
 NEUTRON_TYPE_DRIVERS: ['flat', 'gre', 'vxlan', 'vlan']
 NEUTRON_TENANT_NETWORK_TYPES: ['$ovs_config["tenant_network_type"]']
 NEUTRON_OVS_BRIDGE_MAPPINGS: $ovs_config['bridge_mappings']
